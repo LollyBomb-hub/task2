@@ -17,8 +17,8 @@ class Note:
 	def send_back(self):
 		return {"id": self.id, "title": self.title, "content": self.content}
 
-notes_list = []
-notes_back_list = []
+notes_list = {}
+notes_back_list = {}
 
 @app.route('/notes', methods = ['POST', 'GET'])
 def notes():
@@ -26,10 +26,10 @@ def notes():
 		data = request.get_json()
 		try:
 			if "title" in data.keys():
-				notes_list.append(Note(data["title"], data["content"]))
-				notes_back_list.append(notes_list[-1].send_back())
+				notes_list[id] = Note(data["title"], data["content"])
+				notes_back_list[id] = notes_list[id].send_back()
 				id += 1
-			return notes_back_list[-1]
+			return notes_back_list[id]
 		except:
 			return 500
 	else:
@@ -40,7 +40,7 @@ def notes():
 				if query in i.title or query in i.content:
 					res.append(i.send_back())
 			return str(res),200
-		return str(notes_back_list), 200
+		return str([i for i in notes_back_list.values()]), 200
 
 @app.route('/notes/<cid>', methods = ['GET','PUT','DELETE'])
 def get_note(cid=-1):
@@ -51,7 +51,9 @@ def get_note(cid=-1):
 	if cid <= 0 or cid >= len(notes_list):
 		return "<h1>No notes with such index</h1>", 404
 	if request.method == 'GET':
-		return notes_back_list[cid-1]
+		if cid not in notes_back_list.keys():
+			return 404
+		return notes_back_list[cid]
 	elif request.method == 'PUT':
 		data = request.get_json()
 		if "title" in data.keys():
@@ -60,8 +62,8 @@ def get_note(cid=-1):
 			notes_list[cid].content = data["content"]
 		return 200
 	elif request.method == 'DELETE':
-		notes_list.pop(cid)
-		notes_back_list.pop(cid)
+		del notes_list[cid]
+		del notes_back_list[cid]
 		return 200
 
 
